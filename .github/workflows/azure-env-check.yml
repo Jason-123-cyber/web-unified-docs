@@ -7,9 +7,9 @@ jobs:
   check-env:
     runs-on: ubuntu-latest
     env:
-      AZURE_ENDPOINT: ${{ vars.AZURE_ENDPOINT }}
-      AZURE_API_VERSION: ${{ vars.AZURE_API_VERSION }}
-      AZURE_DEPLOYMENT: ${{ vars.AZURE_DEPLOYMENT }}
+      AZURE_ENDPOINT: ${{ secrets.AZURE_ENDPOINT || vars.AZURE_ENDPOINT }}
+      AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION || vars.AZURE_API_VERSION }}
+      AZURE_DEPLOYMENT: ${{ secrets.AZURE_DEPLOYMENT || vars.AZURE_DEPLOYMENT }}
       AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
     steps:
       - name: Validate required env vars exist
