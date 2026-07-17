@@ -1,0 +1,21 @@
+name: Azure Env Check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-env:
+    runs-on: ubuntu-latest
+    env:
+      AZURE_ENDPOINT: ${{ vars.AZURE_ENDPOINT }}
+      AZURE_API_VERSION: ${{ vars.AZURE_API_VERSION }}
+      AZURE_DEPLOYMENT: ${{ vars.AZURE_DEPLOYMENT }}
+      AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
+    steps:
+      - name: Validate required env vars exist
+        run: |
+          test -n "$AZURE_ENDPOINT" || (echo "Missing AZURE_ENDPOINT" && exit 1)
+          test -n "$AZURE_API_VERSION" || (echo "Missing AZURE_API_VERSION" && exit 1)
+          test -n "$AZURE_DEPLOYMENT" || (echo "Missing AZURE_DEPLOYMENT" && exit 1)
+          test -n "$AZURE_API_KEY" || (echo "Missing AZURE_API_KEY" && exit 1)
+          echo "All Azure env vars are present."
