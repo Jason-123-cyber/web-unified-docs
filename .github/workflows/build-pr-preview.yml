@@ -111,6 +111,9 @@ jobs:
     name: Deploy Unified Docs API Preview
     runs-on: ubuntu-latest
     needs: [security-check, get-changed-files]
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN || vars.VERCEL_TOKEN }}
+      VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID || vars.VERCEL_TEAM_ID }}
     outputs:
       preview_url: ${{ steps.unified_docs_preview_url.outputs.preview_url }}
       preview_url_to_fetch_deployment: ${{ steps.unified_docs_preview_url.outputs.preview_url_to_fetch_deployment }}
@@ -167,11 +170,16 @@ jobs:
       - name: Install Vercel CLI
         run: npm i --global vercel@latest
 
+      - name: Validate Vercel credentials
+        run: |
+          test -n "$VERCEL_TOKEN" || (echo "Missing VERCEL_TOKEN (set secret or variable)." && exit 1)
+          test -n "$VERCEL_TEAM_ID" || (echo "Missing VERCEL_TEAM_ID (set secret or variable)." && exit 1)
+
       - name: Link web-unified-docs Vercel Project
-        run: vercel link --yes --project web-unified-docs --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel link --yes --project web-unified-docs --token=$VERCEL_TOKEN
 
       - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
 
       - name: Check PR Labels and Set Build Type
         id: build-type
@@ -202,7 +210,7 @@ jobs:
         run: |
           vercel build \
             --target=preview \
-            --token=${{ secrets.VERCEL_TOKEN }}
+            --token=$VERCEL_TOKEN
 
       - name: Deploy Project Artifacts and Set GitHub Outputs
         id: unified_docs_preview_url
@@ -211,7 +219,7 @@ jobs:
           preview_url=$(vercel deploy \
             --prebuilt \
             --target=preview \
-            --token=${{ secrets.VERCEL_TOKEN }} \
+            --token=$VERCEL_TOKEN \
             --archive=tgz \
             --env INCREMENTAL_BUILD=${{ env.INCREMENTAL_BUILD }})
           echo "preview_url=$preview_url" >> $GITHUB_OUTPUT
@@ -232,9 +240,9 @@ jobs:
         id: unified_docs_inspector_url
         run: |
           response=$(curl -sS -G "https://api.vercel.com/v13/deployments/${{ steps.unified_docs_preview_url.outputs.preview_url_to_fetch_deployment }}" \
-            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
+            -H "Authorization: ******" \
             -H "Content-Type: application/json" \
-            -d "teamId=${{ secrets.VERCEL_TEAM_ID }}")
+            -d "teamId=$VERCEL_TEAM_ID")
 
           inspector_url=$(echo "$response" | jq -r ".inspectorUrl")
           echo "inspector_url=$inspector_url" >> $GITHUB_OUTPUT
@@ -259,6 +267,9 @@ jobs:
     name: Deploy Dev Portal Preview
     runs-on: ubuntu-latest
     needs: [deploy-unified-docs-api-preview]
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN || vars.VERCEL_TOKEN }}
+      VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID || vars.VERCEL_TEAM_ID }}
     outputs:
       preview_url: ${{ steps.deploy_dev_portal_preview.outputs.preview_url }}
     steps:
@@ -307,7 +318,12 @@ jobs:
       - name: Setup Vercel CLI
         run: npm i --global vercel@latest
 
-      - run: vercel pull --yes --environment=preview --scope=hashicorp --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Validate Vercel credentials
+        run: |
+          test -n "$VERCEL_TOKEN" || (echo "Missing VERCEL_TOKEN (set secret or variable)." && exit 1)
+          test -n "$VERCEL_TEAM_ID" || (echo "Missing VERCEL_TEAM_ID (set secret or variable)." && exit 1)
+
+      - run: vercel pull --yes --environment=preview --scope=hashicorp --token=$VERCEL_TOKEN
         working-directory: unified-docs-frontend-preview
 
       - name: inject env vars
@@ -328,12 +344,12 @@ jobs:
           max_attempts: 2
           command: |
             cd unified-docs-frontend-preview
-            vercel build --token=${{ secrets.VERCEL_TOKEN }}
+            vercel build --token=$VERCEL_TOKEN
 
       - name: Deploy Project Artifacts and Set GitHub Outputs
         id: deploy_dev_portal_preview
         run: |
-          preview_url=$(vercel deploy --prebuilt --archive=tgz --scope=hashicorp --token=${{ secrets.VERCEL_TOKEN }})
+          preview_url=$(vercel deploy --prebuilt --archive=tgz --scope=hashicorp --token=$VERCEL_TOKEN)
           echo "preview_url=$preview_url" >> $GITHUB_OUTPUT
 
           created_utc=$(date -u)
@@ -353,9 +369,9 @@ jobs:
         id: dev_portal_inspector_url
         run: |
           response=$(curl -sS -G "https://api.vercel.com/v13/deployments/${{ steps.deploy_dev_portal_preview.outputs.preview_url_to_fetch_deployment }}" \
-            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
+            -H "Authorization: ******" \
             -H "Content-Type: application/json" \
-            -d "teamId=${{ secrets.VERCEL_TEAM_ID }}")
+            -d "teamId=$VERCEL_TEAM_ID")
           inspector_url=$(echo "$response" | jq -r ".inspectorUrl")
           echo "inspector_url=$inspector_url" >> $GITHUB_OUTPUT
 
