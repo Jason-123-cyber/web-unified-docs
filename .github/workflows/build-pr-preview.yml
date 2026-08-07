@@ -240,7 +240,7 @@ jobs:
         id: unified_docs_inspector_url
         run: |
           response=$(curl -sS -G "https://api.vercel.com/v13/deployments/${{ steps.unified_docs_preview_url.outputs.preview_url_to_fetch_deployment }}" \
-            -H "Authorization: ******" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
             -H "Content-Type: application/json" \
             -d "teamId=$VERCEL_TEAM_ID")
 
@@ -369,7 +369,7 @@ jobs:
         id: dev_portal_inspector_url
         run: |
           response=$(curl -sS -G "https://api.vercel.com/v13/deployments/${{ steps.deploy_dev_portal_preview.outputs.preview_url_to_fetch_deployment }}" \
-            -H "Authorization: ******" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
             -H "Content-Type: application/json" \
             -d "teamId=$VERCEL_TEAM_ID")
           inspector_url=$(echo "$response" | jq -r ".inspectorUrl")
